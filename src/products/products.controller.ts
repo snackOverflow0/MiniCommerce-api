@@ -29,4 +29,26 @@ export class ProductsController {
   findAll() {
     return this.productsService.findAll();
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() body: any,
+    @Req() req: any
+  ) {
+    Number(id),
+    body,
+    req.user.userId
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  delete(
+    @Param('id') id: string,
+    @Req() req: any
+  ) {
+    Number(id),
+    req.user.userId
+  }
 }

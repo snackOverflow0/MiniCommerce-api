@@ -103,13 +103,21 @@ export class AuthService {
         { expiresIn: '7d' }
       )
 
+    // Hash refresh token
+    const hashedRefreshToken =
+      await bcrypt.hash(
+        refreshToken,
+        10
+      )
+
     // Save refresh token in database
     await this.prisma.user.update({
       where: {
         id: user.id,
       },
       data: {
-        refreshToken
+        refreshToken: 
+          hashedRefreshToken
       }
     })
 
@@ -123,30 +131,60 @@ export class AuthService {
   async refresh (
     refreshToken: string
   ) {
-    
-    // Find user with refresh token
-    const user =
-      await this.prisma.user.findFirst({
-        where: {
+    try {
+      // Verify refresh token
+      const payload = 
+        this.jwtService.verify(
           refreshToken
-        }
-      })
+        )
+      
+      // Find user with refresh token
+      const user =
+        await this.prisma.user.findFirst({
+          where: {
+            id: payload.sub
+          }
+        })
 
-    if (!user) {
+      if (
+        !user ||
+        !user.refreshToken
+      ) {
+        throw new UnauthorizedException()
+      }
+
+      // Compare tokens
+      const isMatch = 
+        await bcrypt.compare(
+          refreshToken,
+          user.refreshToken
+        )
+
+      if (!isMatch) {
+        throw new UnauthorizedException()
+      }
+
+      // IF TRUE Generate NEW Access Token
+      const newAccessToken = 
+        this.jwtService.sign(
+          {
+          sub: user.id,
+          email: user.email
+          },
+          {
+            expiresIn: '15m'
+          }
+      )
+
+      return {
+        accessToken: 
+          newAccessToken
+      }
+
+    } catch {
       throw new UnauthorizedException(
         'Invalid refresh token'
       )
-    }
-
-    // Create new access token
-    const newAccessToken = 
-      this.jwtService.sign({
-        sub: user.id,
-        email: user.email
-      })
-
-    return {
-      accessToken: newAccessToken
     }
   }
 }

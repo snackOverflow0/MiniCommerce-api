@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { RateLimitGuard } from './guards/rate-limit.guard';
+import { RefreshDto } from './dto/refresh.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -15,6 +17,7 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  @UseGuards(RateLimitGuard)
   // POST /auth/login
   @Post('login')
   // Extract request body
@@ -26,8 +29,8 @@ export class AuthController {
   // POST /auth/refresh
   @Post('refresh')
   // Extract refreshToken from body
-  refresh(@Body('refreshToken') refreshToken: string) {
+  refresh(@Body() dto: RefreshDto) {
     // Pass to service
-    return this.authService.refresh(refreshToken)
+    return this.authService.refresh(dto.refreshToken)
   }
 }
