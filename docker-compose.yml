@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: admin123
+      DATABASE_DB: minicommercedb
